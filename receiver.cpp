@@ -13,7 +13,7 @@
 #include <opencv2/core.hpp>
 #include <opencv2/imgproc.hpp>
 #include <opencv2/highgui.hpp>
-#include "comm.h"
+// #include "comm.h"
 
 #define DATA_BUFFER_SIZE 1494
 #define w 400
@@ -33,6 +33,7 @@ int receive_image(Mat& img)
 	socklen_t addr_len;
 
 	unsigned char packt_data[1496];
+	unsigned int ack;
 	MatIterator_<Vec3b> it, end;
 	size_t i=0;
 
@@ -90,6 +91,12 @@ int receive_image(Mat& img)
 				exit(1);
 			}
 			i=0;
+
+		    if ((numbytes = send(new_fd, (void*)&ack, 4 , 0)) == -1)
+		    {
+		        perror("receiver: send..");
+		        return(1);
+		    }
 		}
 		// printf("i: %d\n",i);
 

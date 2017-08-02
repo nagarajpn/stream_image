@@ -13,7 +13,7 @@
 #include <opencv2/core.hpp>
 #include <opencv2/imgproc.hpp>
 #include <opencv2/highgui.hpp>
-#include "comm.h"
+// #include "comm.h"
 
 #define DATA_BUFFER_SIZE 1494
 #define COMM_PORT "4950"
@@ -66,6 +66,7 @@ int send_image(const char* const ip_address, Mat& img)
   int numbytes;
 
   unsigned char packt_data[1496];
+  unsigned int ack;
   MatIterator_<Vec3b> it, end;
   size_t i=0;
 
@@ -111,13 +112,21 @@ int send_image(const char* const ip_address, Mat& img)
         perror("talker: sendto");
         return(1);
       }
-      waitKey(1);
+      // waitKey(1);
+      if ((numbytes = recv(sockfd, (void*)&ack, 4 , 0)) == -1)
+      {
+          perror("talker: recv..");
+          return(1);
+      }
     }
   }
 
   if (i!=0)
   {
-    send(sockfd,packt_data,DATA_BUFFER_SIZE,0);
+    if ((numbytes = send(sockfd, packt_data, DATA_BUFFER_SIZE, 0)) == -1) {
+      perror("talker: sendto");
+      return(1);
+    }
   }
 
   freeaddrinfo(servinfo);
