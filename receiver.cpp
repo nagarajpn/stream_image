@@ -144,7 +144,7 @@ int main ( void ){
 	// {
 	// 	fprintf(fptr,"r[%d]: %d\n",i,r[i]);
 	// }
-	moveWindow( atom_window, 0, 200 );
+	// moveWindow( atom_window, 0, 200 );
 
   	while(1)
   	{
