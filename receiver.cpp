@@ -119,17 +119,17 @@ int main ( void ){
 	unsigned char r[10000];
 	size_t i;
 
-	fptr = fopen("out.txt", "w");
+	// fptr = fopen("out.txt", "w");
 
 	std::cout << "Rows: "<< atom_image.rows << std::endl;
 	std::cout << "Cols: "<< atom_image.cols << std::endl;
 	std::cout << "Size: "<< atom_image.size() << std::endl;
 
-  	if (!atom_image.isContinuous()) {
-      atom_image = atom_image.clone();
-  	}
+  	// if (!atom_image.isContinuous()) {
+   //    atom_image = atom_image.clone();
+  	// }
 
-  	receive_image(atom_image);
+  	
 
 	// receive_data(atom_image.data,SIZE_OF_MATRIX(atom_image));
 	// receive_data(&r,sizeof(r));
@@ -144,12 +144,17 @@ int main ( void ){
 	// {
 	// 	fprintf(fptr,"r[%d]: %d\n",i,r[i]);
 	// }
+	moveWindow( atom_window, 0, 200 );
 
+  	while(1)
+  	{
+  		imshow( atom_window, atom_image );
+  		receive_image(atom_image);
+		// imshow( atom_window, atom_image );
+		waitKey(200);
+	}
+  	// moveWindow( atom_window, 0, 200 );
 
-
-	imshow( atom_window, atom_image );
-  	moveWindow( atom_window, 0, 200 );
-
-	waitKey( 0 );
+	// waitKey( 0 );
 	return(0);
 }

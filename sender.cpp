@@ -57,6 +57,16 @@ void MyFilledCircle( Mat img, Point center )
       lineType );
 }
 
+void Atom(Mat atom_image)
+{
+    MyEllipse( atom_image, 90 );
+    MyEllipse( atom_image, 0 );
+    MyEllipse( atom_image, 45 );
+    MyEllipse( atom_image, -45 );
+
+    MyFilledCircle( atom_image, Point( w/2, w/2) );
+}
+
 int send_image(const char* const ip_address, Mat& img)
 {
 
@@ -176,7 +186,22 @@ int main ( void ){
   // send_data(RECEIVER_IP,atom_image.data,SIZE_OF_MATRIX(atom_image));
   // s[9999] = 1;
 
-  send_image(RECEIVER_IP,atom_image);
+  while(1)
+  {
+    // send_image(RECEIVER_IP,atom_image);
+    imshow( atom_window, atom_image );
+    send_image(RECEIVER_IP,atom_image);
+    atom_image = Mat(w, w, CV_8UC3, cv::Scalar(255,255,255));
+
+    waitKey(200);
+
+    imshow( atom_window, atom_image );
+    send_image(RECEIVER_IP,atom_image);
+    Atom(atom_image);
+
+    waitKey(200);
+  }
+    // send_image
 
   // send_data(RECEIVER_IP,&s,sizeof s);
 
@@ -188,7 +213,6 @@ int main ( void ){
   // std::cout << SIZE_OF_MATRIX(atom_image) << std::endl;
   // printf("%s\n", );
 
-	imshow( atom_window, atom_image );
   	// moveWindow( atom_window, 0, 200 );
 
 	waitKey( 0 );
