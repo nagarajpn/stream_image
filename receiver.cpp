@@ -21,8 +21,8 @@
 #define SIZE_OF_MATRIX(X) ((X.total())*(X.elemSize()))
 #define COMM_PORT "4950"
 
-// #define RECEIVER_IP "127.0.0.1"
-#define RECEIVER_IP "10.100.10.214"
+#define RECEIVER_IP "127.0.0.1"
+// #define RECEIVER_IP "10.100.10.214"
 
 using namespace cv;
 
@@ -253,14 +253,24 @@ int send_image(const char* const ip_address, Mat& img)
 }
 
 
-int main ( void ){
+int main ( int argc,char* argv[] ){
 
 	char image_window[] = "Image: Receiver";
+	char receiver_ip[20];
 	FILE *fptr;
 	Mat camera_frame = Mat::zeros( ROWS, COLS, CV_8UC3 );
 	// Mat camera_frame;
 	unsigned char r[10000];
 	size_t i;
+
+	strcpy(receiver_ip,"127.0.0.1\0");
+
+	if (argc == 1){
+		if(**argv == 'r')
+			strcpy(receiver_ip,"10.100.10.214\0");
+		else if(**argv == 'n')
+			strcpy(receiver_ip,"10.100.10.151\0");
+	}
 
 	// fptr = fopen("out.txt", "w");
 
@@ -301,11 +311,11 @@ int main ( void ){
 	{
 		receive_image(camera_frame);
 		// frame=cvQueryFrame(capture);
-     	if (camera_frame.empty()) continue;
+     	// if (camera_frame.empty()) continue;
 		cvtColor(camera_frame, camera_frame, COLOR_BGR2HSV);
 	    // imshow(image_window, camera_frame);
     	if(waitKey(30) >= 0) break;
-    	send_image(RECEIVER_IP,camera_frame);
+    	send_image(receiver_ip,camera_frame);
     	if(waitKey(30) >= 0) break;
 	}
   	// moveWindow( atom_window, 0, 200 );

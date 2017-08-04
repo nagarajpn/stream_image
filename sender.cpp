@@ -295,7 +295,7 @@ int send_image(const char* const ip_address, Mat& img)
   close(sockfd);
 }
 
-int main ( void ){
+int main ( int argc,char* argv[] ){
   
   VideoCapture cap(0); // open the default camera
 
@@ -307,6 +307,16 @@ int main ( void ){
   // MatIterator_<Vec3b> it, end;
 
   unsigned char s[480000];
+  char receiver_ip[20];
+
+  strcpy(receiver_ip,"127.0.0.1\0");
+
+  if (argc == 1){
+    if(**argv == 'r')
+      strcpy(receiver_ip,"10.100.10.214\0");
+    else if(**argv == 'n')
+      strcpy(receiver_ip,"10.100.10.151\0");
+  }
 
   //cv::Mat atom_image(100, 100, CV_8UC3);
 
@@ -360,7 +370,7 @@ int main ( void ){
     // GaussianBlur(camera_frame, camera_frame, Size(7,7), 1.5, 1.5);
     // Canny(camera_frame, camera_frame, 0, 30, 3);
     // imshow(image_window, camera_frame);
-    send_image(RECEIVER_IP,frame);
+    send_image(receiver_ip,frame);
     if(waitKey(30) >= 0) break;
     receive_image(frame);
     imshow(image_window,frame);
