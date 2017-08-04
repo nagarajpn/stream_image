@@ -20,8 +20,8 @@
 #define COMM_PORT "4950"
 #define ROWS 480    // Height
 #define COLS 640    // Width
-#define RECEIVER_IP "127.0.0.1"
-// #define RECEIVER_IP "10.100.10.214"
+// #define RECEIVER_IP "127.0.0.1"
+#define RECEIVER_IP "10.100.10.214"
 #define SIZE_OF_MATRIX(X) ((X.total())*(X.elemSize()))
 
 using namespace cv;
@@ -364,6 +364,7 @@ int main ( void ){
     if(waitKey(30) >= 0) break;
     receive_image(frame);
     imshow(image_window,frame);
+    if(waitKey(30) >= 0) break;
   }
 
   // send_data(RECEIVER_IP,&s,sizeof s);

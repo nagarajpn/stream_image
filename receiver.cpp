@@ -21,8 +21,8 @@
 #define SIZE_OF_MATRIX(X) ((X.total())*(X.elemSize()))
 #define COMM_PORT "4950"
 
-#define RECEIVER_IP "127.0.0.1"
-// #define RECEIVER_IP "10.100.10.214"
+// #define RECEIVER_IP "127.0.0.1"
+#define RECEIVER_IP "10.100.10.214"
 
 using namespace cv;
 
@@ -306,6 +306,7 @@ int main ( void ){
 	    // imshow(image_window, camera_frame);
     	if(waitKey(30) >= 0) break;
     	send_image(RECEIVER_IP,camera_frame);
+    	if(waitKey(30) >= 0) break;
 	}
   	// moveWindow( atom_window, 0, 200 );
 
