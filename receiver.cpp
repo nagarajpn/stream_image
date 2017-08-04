@@ -265,13 +265,13 @@ int main ( int argc,char* argv[] ){
 
 	strcpy(receiver_ip,"127.0.0.1\0");
 
-	if (argc == 1){
-		if(**argv == 'r')
+	if (argc == 2){
+		if(argv[1][0] == 'r')
 			strcpy(receiver_ip,"10.100.10.214\0");
-		else if(**argv == 'n')
+		else if(argv[1][0] == 'n')
 			strcpy(receiver_ip,"10.100.10.151\0");
 	}
-
+	// std::cout<<argc<< ":" << argv[1][0] <<receiver_ip<<std::endl;
 	// fptr = fopen("out.txt", "w");
 
 	// std::cout << "Rows: "<< atom_image.rows << std::endl;
