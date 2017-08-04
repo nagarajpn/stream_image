@@ -34,8 +34,11 @@ int receive_image(Mat& img)
 
 	unsigned char packt_data[1496];
 	unsigned int ack;
-	MatIterator_<Vec3b> it, end;
 	size_t i=0;
+	const int channels = img.channels();
+
+	// accept only char type matrices
+	CV_Assert(img.depth() == CV_8U);
 
 	memset(&hints, 0, sizeof hints);
 	hints.ai_family = AF_UNSPEC; // set to AF_INET to force IPv4
@@ -82,27 +85,55 @@ int receive_image(Mat& img)
 	sin_size = sizeof their_addr;
 	new_fd = accept(sockfd, (struct sockaddr *)&their_addr, &sin_size);
 
-	for( it = img.begin<Vec3b>(), end = img.end<Vec3b>(); it != end; ++it)
+	if(channels == 1)
 	{
-		if ((i == 0) || (i > (DATA_BUFFER_SIZE-3)))
+		MatIterator_<uchar> it, end;
+		for( it = img.begin<uchar>(), end = img.end<uchar>(); it != end; ++it)
 		{
-			if ((numbytes = recv(new_fd, packt_data, DATA_BUFFER_SIZE , 0)) == -1) {
-				perror("recvfrom");
-				exit(1);
+			if ((i == 0) || (i > (DATA_BUFFER_SIZE-3)))
+			{
+				if ((numbytes = recv(new_fd, packt_data, DATA_BUFFER_SIZE , 0)) == -1) {
+					perror("recvfrom");
+					exit(1);
+				}
+				i=0;
+
+			    if ((numbytes = send(new_fd, (void*)&ack, 4 , 0)) == -1)
+			    {
+			        perror("receiver: send..");
+			        return(1);
+			    }
 			}
-			i=0;
+			// printf("i: %d\n",i);
 
-		    if ((numbytes = send(new_fd, (void*)&ack, 4 , 0)) == -1)
-		    {
-		        perror("receiver: send..");
-		        return(1);
-		    }
+			(*it) = packt_data[i++];
 		}
-		// printf("i: %d\n",i);
+	}
+	else if(channels == 3)
+	{
+		MatIterator_<Vec3b> it, end;
+		for( it = img.begin<Vec3b>(), end = img.end<Vec3b>(); it != end; ++it)
+		{
+			if ((i == 0) || (i > (DATA_BUFFER_SIZE-3)))
+			{
+				if ((numbytes = recv(new_fd, packt_data, DATA_BUFFER_SIZE , 0)) == -1) {
+					perror("recvfrom");
+					exit(1);
+				}
+				i=0;
 
-		(*it)[0] = packt_data[i++];
-		(*it)[1] = packt_data[i++];
-		(*it)[2] = packt_data[i++];
+			    if ((numbytes = send(new_fd, (void*)&ack, 4 , 0)) == -1)
+			    {
+			        perror("receiver: send..");
+			        return(1);
+			    }
+			}
+			// printf("i: %d\n",i);
+
+			(*it)[0] = packt_data[i++];
+			(*it)[1] = packt_data[i++];
+			(*it)[2] = packt_data[i++];
+		}
 	}
 
   	printf("listener: packet is %d bytes long\n", numbytes);
@@ -151,7 +182,7 @@ int main ( void ){
   		imshow( atom_window, atom_image );
   		receive_image(atom_image);
 		// imshow( atom_window, atom_image );
-		waitKey(200);
+		waitKey(1);
 	}
   	// moveWindow( atom_window, 0, 200 );
 

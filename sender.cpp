@@ -77,8 +77,11 @@ int send_image(const char* const ip_address, Mat& img)
 
   unsigned char packt_data[1496];
   unsigned int ack;
-  MatIterator_<Vec3b> it, end;
   size_t i=0;
+  const int channels = img.channels();
+
+  // accept only char type matrices
+  CV_Assert(img.depth() == CV_8U);
 
   memset(&hints, 0, sizeof hints);
   hints.ai_family = AF_UNSPEC;
@@ -109,24 +112,51 @@ int send_image(const char* const ip_address, Mat& img)
     close(sockfd);
   }
 
-  for( it = img.begin<Vec3b>(), end = img.end<Vec3b>(); it != end; ++it)
+  if(channels == 1)
   {
-    packt_data[i++] = (*it)[0];
-    packt_data[i++] = (*it)[1];
-    packt_data[i++] = (*it)[2];
-
-    if (i > (DATA_BUFFER_SIZE-3))
+    MatIterator_<uchar> it, end;
+    for( it = img.begin<uchar>(), end = img.end<uchar>(); it != end; ++it)
     {
-      i=0;
-      if ((numbytes = send(sockfd, packt_data, DATA_BUFFER_SIZE, 0)) == -1) {
-        perror("talker: sendto");
-        return(1);
-      }
-      // waitKey(1);
-      if ((numbytes = recv(sockfd, (void*)&ack, 4 , 0)) == -1)
+      packt_data[i++] = (*it);
+
+      if (i > (DATA_BUFFER_SIZE-3))
       {
-          perror("talker: recv..");
+        i=0;
+        if ((numbytes = send(sockfd, packt_data, DATA_BUFFER_SIZE, 0)) == -1) {
+          perror("talker: sendto");
           return(1);
+        }
+        // waitKey(1);
+        if ((numbytes = recv(sockfd, (void*)&ack, 4 , 0)) == -1)
+        {
+            perror("talker: recv..");
+            return(1);
+        }
+      }
+    }
+  }
+  else if(channels == 3)
+  {
+    MatIterator_<Vec3b> it, end;
+    for( it = img.begin<Vec3b>(), end = img.end<Vec3b>(); it != end; ++it)
+    {
+      packt_data[i++] = (*it)[0];
+      packt_data[i++] = (*it)[1];
+      packt_data[i++] = (*it)[2];
+
+      if (i > (DATA_BUFFER_SIZE-3))
+      {
+        i=0;
+        if ((numbytes = send(sockfd, packt_data, DATA_BUFFER_SIZE, 0)) == -1) {
+          perror("talker: sendto");
+          return(1);
+        }
+        // waitKey(1);
+        if ((numbytes = recv(sockfd, (void*)&ack, 4 , 0)) == -1)
+        {
+            perror("talker: recv..");
+            return(1);
+        }
       }
     }
   }
@@ -144,6 +174,9 @@ int send_image(const char* const ip_address, Mat& img)
 }
 
 int main ( void ){
+  
+  VideoCapture cap(0); // open the default camera
+
 	char atom_window[] = "Drawing: Atom, Sender";
 	// Mat atom_image = Mat::zeros( w, w, CV_8UC3 );
   Mat atom_image = Mat(w, w, CV_8UC3, cv::Scalar(255,255,255));
@@ -153,6 +186,9 @@ int main ( void ){
   unsigned char s[480000];
 
   //cv::Mat atom_image(100, 100, CV_8UC3);
+
+  if(!cap.isOpened())  // check if we succeeded
+      return -1;
 
   memset(s, 50, 1496);
   memset((s+1496), 51, 1496);
@@ -193,15 +229,25 @@ int main ( void ){
     send_image(RECEIVER_IP,atom_image);
     atom_image = Mat(w, w, CV_8UC3, cv::Scalar(255,255,255));
 
-    waitKey(200);
+    waitKey(1);
 
     imshow( atom_window, atom_image );
     send_image(RECEIVER_IP,atom_image);
     Atom(atom_image);
 
-    waitKey(200);
+    waitKey(1);
   }
-    // send_image
+
+  // while(1)
+  // {
+  //   Mat frame;
+  //   cap >> frame; // get a new frame from camera
+  //   cvtColor(frame, edges, COLOR_BGR2GRAY);
+  //   GaussianBlur(edges, edges, Size(7,7), 1.5, 1.5);
+  //   Canny(edges, edges, 0, 30, 3);
+  //   imshow("edges", edges);
+  //   if(waitKey(30) >= 0) break;
+  // }
 
   // send_data(RECEIVER_IP,&s,sizeof s);
 
