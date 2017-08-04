@@ -69,6 +69,126 @@ using namespace cv;
 //     MyFilledCircle( atom_image, Point( w/2, w/2) );
 // }
 
+int receive_image(Mat& img)
+{
+  int sockfd,new_fd;
+  struct addrinfo hints, *servinfo, *p;
+  struct sockaddr_storage their_addr; // connector's address information
+  socklen_t sin_size;
+  int rv;
+  int numbytes;
+  socklen_t addr_len;
+
+  unsigned char packt_data[1496];
+  unsigned int ack;
+  size_t i=0;
+  const int channels = img.channels();
+
+  // accept only char type matrices
+  CV_Assert(img.depth() == CV_8U);
+
+  memset(&hints, 0, sizeof hints);
+  hints.ai_family = AF_UNSPEC; // set to AF_INET to force IPv4
+  hints.ai_socktype = SOCK_STREAM;
+  hints.ai_flags = AI_PASSIVE; // use my IP..
+
+  if ((rv = getaddrinfo(NULL, COMM_PORT, &hints, &servinfo)) != 0) {
+    fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv));
+    return 1;
+  }
+
+  // loop through all the results and bind to the first we can
+  for(p = servinfo; p != NULL; p = p->ai_next) {
+    if ((sockfd = socket(p->ai_family, p->ai_socktype,
+        p->ai_protocol)) == -1) {
+      perror("listener: socket");
+      continue;
+    }
+
+    if (bind(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
+      close(sockfd);
+      perror("listener: bind");
+      continue;
+    }
+    break;
+  }
+
+  if (p == NULL) {
+    fprintf(stderr, "listener: failed to bind socket\n");
+    return 2;
+  }
+
+  freeaddrinfo(servinfo);
+
+  printf("listener: waiting to recvfrom...\n");
+
+  addr_len = sizeof their_addr;
+
+  if (listen(sockfd, 1) == -1) {
+    perror("listen");
+    exit(1);
+  }
+
+  sin_size = sizeof their_addr;
+  new_fd = accept(sockfd, (struct sockaddr *)&their_addr, &sin_size);
+
+  if(channels == 1)
+  {
+    MatIterator_<uchar> it, end;
+    for( it = img.begin<uchar>(), end = img.end<uchar>(); it != end; ++it)
+    {
+      if ((i == 0) || (i > (DATA_BUFFER_SIZE-3)))
+      {
+        if ((numbytes = recv(new_fd, packt_data, DATA_BUFFER_SIZE , 0)) == -1) {
+          perror("recvfrom");
+          exit(1);
+        }
+        i=0;
+
+          if ((numbytes = send(new_fd, (void*)&ack, 4 , 0)) == -1)
+          {
+              perror("receiver: send..");
+              return(1);
+          }
+      }
+      // printf("i: %d\n",i);
+
+      (*it) = packt_data[i++];
+    }
+  }
+  else if(channels == 3)
+  {
+    MatIterator_<Vec3b> it, end;
+    for( it = img.begin<Vec3b>(), end = img.end<Vec3b>(); it != end; ++it)
+    {
+      if ((i == 0) || (i > (DATA_BUFFER_SIZE-3)))
+      {
+        if ((numbytes = recv(new_fd, packt_data, DATA_BUFFER_SIZE , 0)) == -1) {
+          perror("recvfrom");
+          exit(1);
+        }
+        i=0;
+
+          if ((numbytes = send(new_fd, (void*)&ack, 4 , 0)) == -1)
+          {
+              perror("receiver: send..");
+              return(1);
+          }
+      }
+      // printf("i: %d\n",i);
+
+      (*it)[0] = packt_data[i++];
+      (*it)[1] = packt_data[i++];
+      (*it)[2] = packt_data[i++];
+    }
+  }
+
+    printf("listener: packet is %d bytes long\n", numbytes);
+
+  close(new_fd);
+  close(sockfd);
+}
+
 int send_image(const char* const ip_address, Mat& img)
 {
 
@@ -242,6 +362,8 @@ int main ( void ){
     // imshow(image_window, camera_frame);
     send_image(RECEIVER_IP,frame);
     if(waitKey(30) >= 0) break;
+    receive_image(frame);
+    imshow(image_window,frame);
   }
 
   // send_data(RECEIVER_IP,&s,sizeof s);

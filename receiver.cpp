@@ -21,6 +21,9 @@
 #define SIZE_OF_MATRIX(X) ((X.total())*(X.elemSize()))
 #define COMM_PORT "4950"
 
+#define RECEIVER_IP "127.0.0.1"
+// #define RECEIVER_IP "10.100.10.214"
+
 using namespace cv;
 
 int receive_image(Mat& img)
@@ -143,6 +146,113 @@ int receive_image(Mat& img)
 	close(sockfd);
 }
 
+int send_image(const char* const ip_address, Mat& img)
+{
+
+  int sockfd;
+  struct addrinfo hints, *servinfo, *p;
+  int rv;
+  int numbytes;
+
+  unsigned char packt_data[1496];
+  unsigned int ack;
+  size_t i=0;
+  const int channels = img.channels();
+
+  // accept only char type matrices
+  CV_Assert(img.depth() == CV_8U);
+
+  memset(&hints, 0, sizeof hints);
+  hints.ai_family = AF_UNSPEC;
+  hints.ai_socktype = SOCK_STREAM;
+
+  if ((rv = getaddrinfo(ip_address, COMM_PORT, &hints, &servinfo)) != 0) {
+    fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv));
+    return 1;
+  }
+
+  for(p = servinfo; p != NULL; p = p->ai_next) {
+    if ((sockfd = socket(p->ai_family, p->ai_socktype,
+        p->ai_protocol)) == -1) {
+      perror("talker: socket");
+      continue;
+    }
+
+    break;
+  }
+
+  if (p == NULL) {
+    fprintf(stderr, "talker: failed to create socket\n");
+    return 2;
+  }
+
+  if (connect(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
+    perror("client: connect");
+    close(sockfd);
+  }
+
+  if(channels == 1)
+  {
+    MatIterator_<uchar> it, end;
+    for( it = img.begin<uchar>(), end = img.end<uchar>(); it != end; ++it)
+    {
+      packt_data[i++] = (*it);
+
+      if (i > (DATA_BUFFER_SIZE-3))
+      {
+        i=0;
+        if ((numbytes = send(sockfd, packt_data, DATA_BUFFER_SIZE, 0)) == -1) {
+          perror("talker: sendto");
+          return(1);
+        }
+        // waitKey(1);
+        if ((numbytes = recv(sockfd, (void*)&ack, 4 , 0)) == -1)
+        {
+            perror("talker: recv..");
+            return(1);
+        }
+      }
+    }
+  }
+  else if(channels == 3)
+  {
+    MatIterator_<Vec3b> it, end;
+    for( it = img.begin<Vec3b>(), end = img.end<Vec3b>(); it != end; ++it)
+    {
+      packt_data[i++] = (*it)[0];
+      packt_data[i++] = (*it)[1];
+      packt_data[i++] = (*it)[2];
+
+      if (i > (DATA_BUFFER_SIZE-3))
+      {
+        i=0;
+        if ((numbytes = send(sockfd, packt_data, DATA_BUFFER_SIZE, 0)) == -1) {
+          perror("talker: sendto");
+          return(1);
+        }
+        // waitKey(1);
+        if ((numbytes = recv(sockfd, (void*)&ack, 4 , 0)) == -1)
+        {
+            perror("talker: recv..");
+            return(1);
+        }
+      }
+    }
+  }
+
+  if (i!=0)
+  {
+    if ((numbytes = send(sockfd, packt_data, DATA_BUFFER_SIZE, 0)) == -1) {
+      perror("talker: sendto");
+      return(1);
+    }
+  }
+
+  freeaddrinfo(servinfo);
+  close(sockfd);
+}
+
+
 int main ( void ){
 
 	char image_window[] = "Image: Receiver";
@@ -190,9 +300,12 @@ int main ( void ){
 	while(1)
 	{
 		receive_image(camera_frame);
-		//cvtColor(camera_frame, camera_frame, COLOR_BGR2GRAY);
-	    imshow(image_window, camera_frame);
+		// frame=cvQueryFrame(capture);
+     	if (camera_frame.empty()) continue;
+		cvtColor(camera_frame, camera_frame, COLOR_BGR2HSV);
+	    // imshow(image_window, camera_frame);
     	if(waitKey(30) >= 0) break;
+    	send_image(RECEIVER_IP,camera_frame);
 	}
   	// moveWindow( atom_window, 0, 200 );
 
