@@ -10,6 +10,7 @@
 #include <netdb.h>
 
 #include <cstdio>
+#include <iostream>
 #include <opencv2/core.hpp>
 #include <opencv2/imgproc.hpp>
 #include <opencv2/highgui.hpp>
@@ -17,55 +18,56 @@
 
 #define DATA_BUFFER_SIZE 1494
 #define COMM_PORT "4950"
-#define w 400
+#define ROWS 480    // Height
+#define COLS 640    // Width
 #define RECEIVER_IP "127.0.0.1"
 // #define RECEIVER_IP "10.100.10.214"
 #define SIZE_OF_MATRIX(X) ((X.total())*(X.elemSize()))
 
 using namespace cv;
 
-void MyEllipse( Mat img, double angle )
-{
-  int thickness = 2;
-  int lineType = 8;
+// void MyEllipse( Mat img, double angle )
+// {
+//   int thickness = 2;
+//   int lineType = 8;
 
-  ellipse( img,
-       Point( w/2, w/2 ),
-       Size( w/4, w/16 ),
-       angle,
-       0,
-       360,
-       Scalar( 255, 0, 0 ),
-       thickness,
-       lineType );
-}
+//   ellipse( img,
+//        Point( w/2, w/2 ),
+//        Size( w/4, w/16 ),
+//        angle,
+//        0,
+//        360,
+//        Scalar( 255, 0, 0 ),
+//        thickness,
+//        lineType );
+// }
 
-/**
- *  * @function MyFilledCircle
- *   * @brief Draw a fixed-size filled circle
- *    */
-void MyFilledCircle( Mat img, Point center )
-{
-  int thickness = -1;
-  int lineType = 8;
+// /**
+//  *  * @function MyFilledCircle
+//  *   * @brief Draw a fixed-size filled circle
+//  *    */
+// void MyFilledCircle( Mat img, Point center )
+// {
+//   int thickness = -1;
+//   int lineType = 8;
 
-  circle( img,
-      center,
-      w/32,
-      Scalar( 0, 0, 255 ),
-      thickness,
-      lineType );
-}
+//   circle( img,
+//       center,
+//       w/32,
+//       Scalar( 0, 0, 255 ),
+//       thickness,
+//       lineType );
+// }
 
-void Atom(Mat atom_image)
-{
-    MyEllipse( atom_image, 90 );
-    MyEllipse( atom_image, 0 );
-    MyEllipse( atom_image, 45 );
-    MyEllipse( atom_image, -45 );
+// void Atom(Mat atom_image)
+// {
+//     MyEllipse( atom_image, 90 );
+//     MyEllipse( atom_image, 0 );
+//     MyEllipse( atom_image, 45 );
+//     MyEllipse( atom_image, -45 );
 
-    MyFilledCircle( atom_image, Point( w/2, w/2) );
-}
+//     MyFilledCircle( atom_image, Point( w/2, w/2) );
+// }
 
 int send_image(const char* const ip_address, Mat& img)
 {
@@ -177,9 +179,10 @@ int main ( void ){
   
   VideoCapture cap(0); // open the default camera
 
-	char atom_window[] = "Drawing: Atom, Sender";
+	char image_window[] = "Image: Sender";
 	// Mat atom_image = Mat::zeros( w, w, CV_8UC3 );
-  Mat atom_image = Mat(w, w, CV_8UC3, cv::Scalar(255,255,255));
+  Mat atom_image = Mat(ROWS, COLS, CV_8UC3, cv::Scalar(255,255,255));
+  Mat camera_frame;
   size_t i;
   // MatIterator_<Vec3b> it, end;
 
@@ -198,22 +201,12 @@ int main ( void ){
   memset((s+(5*1496)), 55, 1496);
   memset((s+(6*1496)), 56, (10000 - (6*1496)));
 
-  	MyEllipse( atom_image, 90 );
-  	MyEllipse( atom_image, 0 );
-  	MyEllipse( atom_image, 45 );
-  	MyEllipse( atom_image, -45 );
+ //  	MyEllipse( atom_image, 90 );
+ //  	MyEllipse( atom_image, 0 );
+ //  	MyEllipse( atom_image, 45 );
+ //  	MyEllipse( atom_image, -45 );
 
-	MyFilledCircle( atom_image, Point( w/2, w/2) );
-
-  // for(it = I.begin<Vec3b>(), end = I.end<Vec3b>(); it != end; ++it)
-  // {
-  //   for( it = I.begin<Vec3b>(), end = I.end<Vec3b>(); it != end; ++it)
-  //   {
-  //       (*it)[0] = table[(*it)[0]];
-  //       (*it)[1] = table[(*it)[1]];
-  //       (*it)[2] = table[(*it)[2]];
-  //   }
-  // }
+	// MyFilledCircle( atom_image, Point( w/2, w/2) );
 
   // if (!atom_image.isContinuous()) {
   //     atom_image = atom_image.clone();
@@ -222,32 +215,34 @@ int main ( void ){
   // send_data(RECEIVER_IP,atom_image.data,SIZE_OF_MATRIX(atom_image));
   // s[9999] = 1;
 
-  while(1)
-  {
-    // send_image(RECEIVER_IP,atom_image);
-    imshow( atom_window, atom_image );
-    send_image(RECEIVER_IP,atom_image);
-    atom_image = Mat(w, w, CV_8UC3, cv::Scalar(255,255,255));
-
-    waitKey(1);
-
-    imshow( atom_window, atom_image );
-    send_image(RECEIVER_IP,atom_image);
-    Atom(atom_image);
-
-    waitKey(1);
-  }
-
   // while(1)
   // {
-  //   Mat frame;
-  //   cap >> frame; // get a new frame from camera
-  //   cvtColor(frame, edges, COLOR_BGR2GRAY);
-  //   GaussianBlur(edges, edges, Size(7,7), 1.5, 1.5);
-  //   Canny(edges, edges, 0, 30, 3);
-  //   imshow("edges", edges);
-  //   if(waitKey(30) >= 0) break;
+  //   // send_image(RECEIVER_IP,atom_image);
+  //   imshow( atom_window, atom_image );
+  //   send_image(RECEIVER_IP,atom_image);
+  //   atom_image = Mat(w, w, CV_8UC3, cv::Scalar(255,255,255));
+
+  //   waitKey(1);
+
+  //   imshow( atom_window, atom_image );
+  //   send_image(RECEIVER_IP,atom_image);
+  //   Atom(atom_image);
+
+  //   waitKey(1);
   // }
+
+
+  while(1)
+  {
+    Mat frame;
+    cap >> frame; // get a new frame from camera
+    // std::cout << frame.rows << " : " << frame.cols << std::endl;
+    // GaussianBlur(camera_frame, camera_frame, Size(7,7), 1.5, 1.5);
+    // Canny(camera_frame, camera_frame, 0, 30, 3);
+    // imshow(image_window, camera_frame);
+    send_image(RECEIVER_IP,frame);
+    if(waitKey(30) >= 0) break;
+  }
 
   // send_data(RECEIVER_IP,&s,sizeof s);
 
@@ -261,6 +256,6 @@ int main ( void ){
 
   	// moveWindow( atom_window, 0, 200 );
 
-	waitKey( 0 );
+	// waitKey( 0 );
 	return(0);
 }

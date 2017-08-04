@@ -16,7 +16,8 @@
 // #include "comm.h"
 
 #define DATA_BUFFER_SIZE 1494
-#define w 400
+#define ROWS 480    // Height
+#define COLS 640    // Width
 #define SIZE_OF_MATRIX(X) ((X.total())*(X.elemSize()))
 #define COMM_PORT "4950"
 
@@ -144,17 +145,18 @@ int receive_image(Mat& img)
 
 int main ( void ){
 
-	char atom_window[] = "Drawing: Atom, Receiver";
+	char image_window[] = "Image: Receiver";
 	FILE *fptr;
-	Mat atom_image = Mat::zeros( w, w, CV_8UC3 );
+	Mat camera_frame = Mat::zeros( ROWS, COLS, CV_8UC3 );
+	// Mat camera_frame;
 	unsigned char r[10000];
 	size_t i;
 
 	// fptr = fopen("out.txt", "w");
 
-	std::cout << "Rows: "<< atom_image.rows << std::endl;
-	std::cout << "Cols: "<< atom_image.cols << std::endl;
-	std::cout << "Size: "<< atom_image.size() << std::endl;
+	// std::cout << "Rows: "<< atom_image.rows << std::endl;
+	// std::cout << "Cols: "<< atom_image.cols << std::endl;
+	// std::cout << "Size: "<< atom_image.size() << std::endl;
 
   	// if (!atom_image.isContinuous()) {
    //    atom_image = atom_image.clone();
@@ -177,12 +179,20 @@ int main ( void ){
 	// }
 	// moveWindow( atom_window, 0, 200 );
 
-  	while(1)
-  	{
-  		imshow( atom_window, atom_image );
-  		receive_image(atom_image);
-		// imshow( atom_window, atom_image );
-		waitKey(1);
+ //  	while(1)
+ //  	{
+ //  		imshow( atom_window, atom_image );
+ //  		receive_image(atom_image);
+	// 	// imshow( atom_window, atom_image );
+	// 	waitKey(1);
+	// }
+
+	while(1)
+	{
+		receive_image(camera_frame);
+		//cvtColor(camera_frame, camera_frame, COLOR_BGR2GRAY);
+	    imshow(image_window, camera_frame);
+    	if(waitKey(30) >= 0) break;
 	}
   	// moveWindow( atom_window, 0, 200 );
 
